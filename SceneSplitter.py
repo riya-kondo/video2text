@@ -1,13 +1,8 @@
 #! /usr/bin/env python3
 # -*- coding:utf-8 -*-
-import os
-import glob
 import numpy as np
-import time
 import scipy.fftpack
 import cv2
-import pdb
-from PIL import Image
 
         
 class hashConverter:
@@ -153,7 +148,6 @@ class PhashConverter(hashConverter):
         離散コサイン変換を行い，画像の低周波成分を用いてハッシュ化を行います．
         refer this: http://www.hackerfactor.com/blog/index.php?/archives/432-Looks-Like-It.html
         '''
-        pdb.set_trace()
         img = self.frame_list[index]
         img = cv2.resize(img, (self.hash_size, self.hash_size))
         imgarray = np.array(img, dtype=np.float).reshape(self.hash_size**2)
@@ -177,7 +171,6 @@ class DhashConverter(hashConverter):
         img = cv2.resize(img, (self.hash_size+1, self.hash_size))
         imgarray = np.array(img, dtype=np.float).reshape(self.hash_size+1, self.hash_size)
         hash_num = imgarray[1:,:] > imgarray[:-1,:]
-        pdb.set_trace()
         return hash_num
 
 
@@ -225,7 +218,11 @@ class NNConverter(hashConverter):
         return sim
 
 if __name__ == '__main__':
-    import sys, glob, pdb
+    import sys, glob, pdb, os
+    if len(sys.srgv) < 2:
+        print('Usage:')
+        print('python SceneSplitter.py [directory]')
+        print('[directory]にはフレーム画像データを格納したディレクトリを指定してください．')
     path_to_frames_dir = os.path.abspath(sys.argv[1])
     vid = os.path.basename(path_to_frames_dir)
     files = sorted(glob.glob(path_to_frames_dir+'/*.jpg'))
