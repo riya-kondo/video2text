@@ -32,6 +32,10 @@ class DatasetCreator:
           ...
           videoN, captionN
         '''
+        self.__filters = {
+              'caption_length': None,
+              'frame_length': None
+            }
         self.tokenizer = tokenizer.SpTokenizer(model_dir, words_num, corpus_file)
         _, caption_ext = os.path.splitext(caption_file)
         if caption_ext not in supports_file_types:
@@ -48,10 +52,10 @@ class DatasetCreator:
         f.close()
         return 
 
-    def __call__(self, save_path=None, max_caption_length, min_caption_length):
+    def __call__(self, save_path=None):
         pairs = [(vid, caption) for vid, caption in self.caption_dic.items()]
-        pairs = [(vid, caption) for vid, caption in self.get_pair_of_id_and_word(pairs)
-                  if max_caption_length > len(caption) > min_caption_length]
+        pairs = [(vid, caption) for vid, caption in zip(self.get_pair(pairs))]
+
         max_caption_length =  max(len(l) for l in captions)
         min_caption_length =  min(len(l) for l in captions)
         video_ids, captions = zip(*pairs)
@@ -69,7 +73,7 @@ class DatasetCreator:
                 pickle.dump(data, f)
         return data
 
-    def get_pair_of_id_and_word(self, pairs:list):
+    def get_pair(self, pairs:list):
         ids = []
         sentences = []
         for vid, captions in pairs:
@@ -79,6 +83,10 @@ class DatasetCreator:
             videos += [vpath]*len(captions)
         assert len(ids)==len(sentences), 'ids and sentences length is difference'
         return ids, sentences
+
+    def set_filter(self, filt:tuple, key='caption_length'):
+        self.__filters[key] = filt
+        return
 
 
 if __name__ == '__main__':
