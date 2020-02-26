@@ -32,10 +32,6 @@ class DatasetCreator:
           ...
           videoN, captionN
         '''
-        self.__filters = {
-              'caption_length': None,
-              'frame_length': None
-            }
         self.tokenizer = tokenizer.SpTokenizer(model_dir, words_num, corpus_file)
         _, caption_ext = os.path.splitext(caption_file)
         if caption_ext not in supports_file_types:
@@ -83,10 +79,6 @@ class DatasetCreator:
             videos += [vpath]*len(captions)
         assert len(ids)==len(sentences), 'ids and sentences length is difference'
         return ids, sentences
-
-    def set_filter(self, filt:tuple, key='caption_length'):
-        self.__filters[key] = filt
-        return
 
 
 if __name__ == '__main__':
