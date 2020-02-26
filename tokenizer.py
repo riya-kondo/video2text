@@ -3,6 +3,7 @@
 
 from abc import ABCMeta, abstractmethod
 import pickle as pkl
+import os
 
 class Tokenizer(metaclass=ABCMeta):
     def __init__(self, model):
@@ -64,12 +65,19 @@ class TfTokenizer(Tokenizer):
         if path_to_pkl:
             with open(path_to_pkl, 'rb') as f:
                 model = pkl.load(f)
-        else:
+        elif path_to_corpus:
+            import tensorflow as tf
             with open(path_to_corpus, 'r') as f:
                 corpus = f.readlines()
-            model = tf.keras.preprocessing.text.Tokenizer(num_words=num_words,
-                                                          oov_token='<unk>')
+            model = tf.keras.preprocessing.text.Tokenizer(num_words=words_num,
+                                                          oov_token='<unk>',
+                                                          filters='"#$%&()*+.,-/:;=@[\]^_`{|}~ ')
+            corpus = ['<start> ' + c.rstrip(os.linesep) + ' <end>' for c in corpus]
             model.fit_on_texts(corpus)
+            model.word_index['<pad>'] = 0
+            model.index_word[0] = '<pad>'
+        else:
+            raise TypeError('Tokenizer needs path of pickle file or path of corpus file.')
         return model
 
 
@@ -102,7 +110,7 @@ class SpTokenizer(Tokenizer):
     def get_vocab_size(self):
         return len(self.model)
 
-    def _get_sentencepiece(model_dir, word_num=8000, path_to_corpus:str=None):
+    def _get_sentencepiece(self, model_dir, word_num=8000, path_to_corpus:str=None):
         sp = spm.SentencePieceProcessor()
         if path_to_corpus:
             '''
@@ -120,28 +128,30 @@ class SpTokenizer(Tokenizer):
             '''
             Load Sentencepiece from pretrained model.
             '''
-            try:
-                sp.Load(glob.glob(model_dir+'/*.model')[0])
-            except IndexError:
-                print('specified model directory must have .model file.')
+            model_path = glob.glob(model_dir+'/*.model')
+            if model_path:
+                sp.Load(model_path[0])
+            else:
+                raise TypeError('Specified model directory does not have model file.')
         return sp
 
 if __name__ == '__main__':
     import sys
-    import os
 
-    if sys.argv[1][-3:]=='pkl':
-        f = open(sys.argv[1], 'rb')
-        data = pkl.load(f)
-        f.close() 
-        tokenizer = TfTokenizer(data['tokenizer'])
-    elif sys.argv[1][-5:]=='model':
-        tokenizer = SpTokenizer(sys.argv[1])
+    path = sys.argv[1]
+    _, ext = os.path.splitext(path)
+    if ext=='.pkl':
+        tokenizer = TfTokenizer(path_to_pkl=path)
+    elif ext=='.model':
+        tokenizer = SpTokenizer(model_dir=path)
+    elif ext=='.txt':
+        tokenizer = TfTokenizer(path_to_corpus=path)
     else:
-        raise TypeError(sys.argv[1][:-5])
+        raise TypeError('Specified file is not supported.')
     ids = [   2,    4,    8,    6, 3367,   18,    7,   75,   11,  203,  349,
           5,    3,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
           0,    0]
     words = tokenizer.ids2words(ids)
     print(words)
+    import pdb; pdb.set_trace()
