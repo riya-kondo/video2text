@@ -30,9 +30,8 @@ class Tokenizer(metaclass=ABCMeta):
 
 
 class TfTokenizer(Tokenizer):
-    def __init__(Self, model):
-        with open(model, 'rb') as f:
-            model = pkl.load(f)
+    def __init__(self, path_to_pkl:str=None, words_num=8000, path_to_corpus:str=None):
+        model = self._get_model(path_to_pkl, words_num, path_to_corpus)
         super().__init__(model)
 
     def ids2words(self, ids):
@@ -60,6 +59,18 @@ class TfTokenizer(Tokenizer):
 
     def get_vocab_size(self):
         return self.model.num_words
+
+    def _get_model(self, path_to_pkl, words_num, path_to_corpus):
+        if path_to_pkl:
+            with open(path_to_pkl, 'rb') as f:
+                model = pkl.load(f)
+        else:
+            with open(path_to_corpus, 'r') as f:
+                corpus = f.readlines()
+            model = tf.keras.preprocessing.text.Tokenizer(num_words=num_words,
+                                                          oov_token='<unk>')
+            model.fit_on_texts(corpus)
+        return model
 
 
 class SpTokenizer(Tokenizer):
